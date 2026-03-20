@@ -130,6 +130,73 @@ with app.app_context():
 python app.py
 ```
 
+## Adversarial Defense & Anti-Spoofing Strategy
+
+### The Market Crash Scenario
+
+A coordinated fraud ring used 500 fake accounts with GPS spoofing to
+drain a platform's liquidity pool. GigShield's multi-layer defense
+makes this attack economically unviable.
+
+---
+
+### How We Spot the Faker
+
+**GPS Trajectory Consistency**
+Real workers show movement traces with logical paths and dwell times.
+Spoofers teleport. Any location delta exceeding 120 km/h between
+15-minute pings is flagged automatically.
+
+**Partner API Cross-Verification**
+We verify with the delivery platform that the partner's app was
+online with zero completed orders. No active app session during the
+claimed disruption window means automatic rejection.
+
+**Cluster Detection**
+10 or more claims from the same IP subnet or pincode within a 2-hour
+window triggers a full cluster hold before any payout is released.
+
+**Account Seasoning Rule**
+Accounts under 14 days old with no verified delivery history cannot
+receive automatic payouts. All claims go to manual review.
+
+**Device Fingerprinting**
+Every session captures browser agent, timezone, and network type.
+Identical fingerprints across multiple accounts are flagged as
+synthetic.
+
+---
+
+### Flagging Bad Actors Without Punishing Honest Workers
+
+| Fraud Score | Action |
+|-------------|--------|
+| Below 0.3 | Auto approved, paid end of day |
+| 0.3 to 0.6 | 24-hour soft hold, auto releases if checks pass |
+| 0.6 to 0.8 | Manual review, decision within 48 hours |
+| Above 0.8 | Auto rejected, full appeal available via in-app report |
+
+Honest workers caught in a fraud cluster are never permanently
+blocked. They move to manual review or the appeal queue with
+LLM-assisted human oversight.
+
+---
+
+### Liquidity Pool Protection
+
+If total payout liability for a single disruption event exceeds
+3 times the average daily payout volume for that pincode cluster,
+automatic payouts pause and remaining claims enter manual review.
+Claims already approved before the cap are unaffected.
+
+---
+
+### Summary
+
+GPS spoofing alone cannot defeat GigShield. A fraud ring must
+simultaneously spoof a delivery platform session, a device
+fingerprint, a realistic movement trace, and a multi-week account
+history. The attack surface is too wide to exploit at scale.
 Open http://localhost:5000 in your browser.
 
 ---
