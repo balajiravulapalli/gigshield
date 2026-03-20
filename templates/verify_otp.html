@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Verify OTP — GigShield{% endblock %}
+{% block extra_css %}
+<style>
+  .auth-page { min-height: calc(100vh - 64px); display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 40px 16px; }
+  .auth-card { background: white; border-radius: 20px; box-shadow: var(--shadow-lg); width: 100%; max-width: 440px; overflow: hidden; }
+  .auth-header { background: linear-gradient(135deg, #B6244F, #6b1128); padding: 36px; text-align: center; }
+  .auth-header .shield { font-size: 48px; margin-bottom: 8px; }
+  .auth-header h1 { font-size: 24px; color: white; margin-bottom: 4px; }
+  .auth-header p { color: rgba(255,255,255,0.7); font-size: 14px; }
+  .auth-body { padding: 36px; text-align: center; }
+  .otp-inputs { display: flex; gap: 10px; justify-content: center; margin: 28px 0; }
+  .otp-input {
+    width: 52px; height: 60px; border: 2px solid var(--border);
+    border-radius: 10px; font-size: 24px; font-weight: 700;
+    text-align: center; color: var(--charcoal);
+    transition: all 0.2s; font-family: monospace; outline: none;
+  }
+  .otp-input:focus { border-color: var(--charcoal); box-shadow: 0 0 0 3px rgba(80,71,70,0.12); }
+  .otp-input.filled { border-color: var(--gold); background: #fff9e6; }
+  .timer { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+  .timer span { color: var(--crimson); font-weight: 700; }
+  .resend-btn { background: none; border: none; color: var(--warm-brown); font-family: 'DM Sans'; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: underline; }
+  .resend-btn:disabled { color: var(--pale-blush); cursor: not-allowed; text-decoration: none; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="shield">🔐</div>
+      <h1>Verify Your Identity</h1>
+      <p>
+        {% if purpose == 'registration' %}We sent a verification code to your email.
+        {% elif purpose == '2fa' %}Two-factor authentication required.
+        {% else %}Enter the OTP sent to your registered email.{% endif %}
+      </p>
+    </div>
+    <div class="auth-body">
+      <p style="color:var(--text-muted);font-size:14px;">Enter the 6-digit code from your email. Check your spam folder if not received.</p>
+      <form method="POST" action="/verify-otp" id="otpForm">
+        <div class="otp-inputs">
+          {% for i in range(1, 7) %}
+          <input type="text" class="otp-input" name="otp{{ i }}" id="otp{{ i }}" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-crimson w-full" style="padding:13px;justify-content:center;font-size:15px;">
+          <i class="fas fa-check-circle"></i> Verify Code
+        </button>
+      </form>
+      <div class="timer" style="margin-top:20px;">
+        Code expires in <span id="countdown">10:00</span>
+      </div>
+      <button class="resend-btn" id="resendBtn" disabled onclick="resendOTP()">Resend Code</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  // OTP input auto-advance
+  const inputs = document.querySelectorAll('.otp-input');
+  inputs.forEach((inp, idx) => {
+    inp.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9]/g, '');
+      if (this.value && idx < 5) inputs[idx + 1].focus();
+      this.classList.toggle('filled', !!this.value);
+    });
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && !this.value && idx > 0) inputs[idx - 1].focus();
+    });
+    inp.addEventListener('paste', function(e) {
+      e.preventDefault();
+      const data = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+      data.split('').forEach((d, i) => { if (inputs[i]) { inputs[i].value = d; inputs[i].classList.add('filled'); } });
+      if (data.length === 6) document.getElementById('otpForm').submit();
+    });
+  });
+  inputs[0].focus();
+
+  // Countdown timer
+  let seconds = 600;
+  const countdown = document.getElementById('countdown');
+  const resendBtn = document.getElementById('resendBtn');
+  const timer = setInterval(() => {
+    seconds--;
+    const m = Math.floor(seconds / 60), s = seconds % 60;
+    countdown.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    if (seconds <= 0) {
+      clearInterval(timer);
+      countdown.textContent = 'Expired';
+      resendBtn.disabled = false;
+    }
+    if (seconds === 30) resendBtn.disabled = false;
+  }, 1000);
+
+  async function resendOTP() {
+    resendBtn.disabled = true;
+    const r = await fetch('/resend-otp', { method: 'POST', headers: {'Content-Type': 'application/json'} });
+    const d = await r.json();
+    if (d.success) { showToast('New OTP sent!', 'success'); seconds = 600; }
+    else showToast(d.message || 'Failed to resend', 'error');
+  }
+</script>
+{% endblock %}

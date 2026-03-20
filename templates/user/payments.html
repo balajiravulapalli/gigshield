@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Payments — GigShield{% endblock %}
+{% block content %}
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">Main</div>
+    <a href="/dashboard" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="/dashboard/policies" class="sidebar-link"><i class="fas fa-shield-alt"></i> My Policy</a>
+    <a href="/dashboard/subscribe" class="sidebar-link"><i class="fas fa-plus-circle"></i> Subscribe</a>
+    <div class="sidebar-section">Activity</div>
+    <a href="/dashboard/claims" class="sidebar-link"><i class="fas fa-file-invoice"></i> Claims</a>
+    <a href="/dashboard/payments" class="sidebar-link active"><i class="fas fa-receipt"></i> Payments</a>
+    <div class="sidebar-section">Support</div>
+    <a href="/dashboard/report" class="sidebar-link"><i class="fas fa-flag"></i> Report Issue</a>
+  </aside>
+  <main class="main-content">
+    <div class="page-header">
+      <h1>Payment History</h1>
+      <p>All your premium payments and insurance payouts in one place.</p>
+    </div>
+
+    <!-- Summary cards -->
+    {% set total_paid = payments|selectattr('payment_type','eq','premium')|selectattr('status','eq','completed')|map(attribute='amount')|sum %}
+    {% set total_received = payments|selectattr('payment_type','eq','payout')|selectattr('status','eq','completed')|map(attribute='amount')|sum %}
+    <div class="grid-3" style="margin-bottom:24px;">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#f8d7da;">💸</div>
+        <div class="stat-value">₹{{ total_paid|int }}</div>
+        <div class="stat-label">Total Premiums Paid</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#d4edda;">💰</div>
+        <div class="stat-value" style="color:#28a745;">₹{{ total_received|int }}</div>
+        <div class="stat-label">Total Payouts Received</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fff3cd;">📊</div>
+        <div class="stat-value" style="color:{% if total_received > total_paid %}#28a745{% else %}var(--crimson){% endif %};">
+          {% if total_received > total_paid %}+{% endif %}₹{{ (total_received - total_paid)|int|abs }}
+        </div>
+        <div class="stat-label">Net {{ 'Gain' if total_received > total_paid else 'Premium Spent' }}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      {% if payments %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date & Time</th>
+              <th>Description</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Razorpay ID</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for pay in payments %}
+          <tr>
+            <td style="color:var(--text-muted);font-size:12px;">{{ pay.id }}</td>
+            <td style="font-size:13px;">{{ pay.created_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+            <td style="font-size:13px;">{{ pay.description or pay.payment_type.title() }}</td>
+            <td>
+              {% if pay.payment_type == 'premium' %}
+              <span class="badge badge-grey"><i class="fas fa-shield-alt" style="font-size:10px;"></i> Premium</span>
+              {% else %}
+              <span class="badge badge-green"><i class="fas fa-arrow-down" style="font-size:10px;"></i> Payout</span>
+              {% endif %}
+            </td>
+            <td style="font-weight:700;{% if pay.payment_type == 'payout' %}color:#28a745;{% else %}color:var(--crimson);{% endif %}font-size:15px;">
+              {% if pay.payment_type == 'payout' %}+{% else %}-{% endif %}₹{{ pay.amount|int }}
+            </td>
+            <td style="font-size:11px;color:var(--text-muted);font-family:monospace;">
+              {{ pay.razorpay_payment_id[:20] + '...' if pay.razorpay_payment_id and pay.razorpay_payment_id|length > 20 else (pay.razorpay_payment_id or '—') }}
+            </td>
+            <td>
+              {% if pay.status == 'completed' %}<span class="badge badge-green">Completed</span>
+              {% elif pay.status == 'pending' %}<span class="badge badge-yellow">Pending</span>
+              {% elif pay.status == 'failed' %}<span class="badge badge-red">Failed</span>
+              {% else %}<span class="badge badge-grey">{{ pay.status.title() }}</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:60px;color:var(--text-muted);">
+        <i class="fas fa-receipt" style="font-size:48px;margin-bottom:16px;display:block;opacity:0.2;"></i>
+        <h3 style="margin-bottom:8px;">No Payment History</h3>
+        <p>Subscribe to a plan to see your payment activity here.</p>
+        <a href="/dashboard/subscribe" class="btn btn-gold" style="margin-top:16px;">Get Covered</a>
+      </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}

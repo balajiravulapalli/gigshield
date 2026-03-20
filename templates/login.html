@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Login — GigShield{% endblock %}
+{% block extra_css %}
+<style>
+  .auth-page { min-height: calc(100vh - 64px); display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 40px 16px; }
+  .auth-card { background: white; border-radius: 20px; box-shadow: var(--shadow-lg); width: 100%; max-width: 440px; overflow: hidden; }
+  .auth-header { background: linear-gradient(135deg, #504746, #2c2422); padding: 36px; text-align: center; }
+  .auth-header .shield { font-size: 48px; margin-bottom: 8px; }
+  .auth-header h1 { font-size: 26px; color: white; margin-bottom: 4px; }
+  .auth-header p { color: var(--pale-blush); font-size: 14px; }
+  .auth-body { padding: 36px; }
+  .auth-body .form-group { margin-bottom: 20px; }
+  .divider { text-align: center; color: var(--text-muted); font-size: 12px; position: relative; margin: 20px 0; }
+  .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--border); }
+  .divider::before { left: 0; } .divider::after { right: 0; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="shield">🛡️</div>
+      <h1>Welcome Back</h1>
+      <p>Login to your GigShield account</p>
+    </div>
+    <div class="auth-body">
+      <form method="POST" action="/login">
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" name="email" placeholder="your@email.com" required autofocus>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="Your password" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-full" style="padding:13px;font-size:15px;justify-content:center;">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+      </form>
+      <div class="divider">A one-time code will be sent to your email</div>
+      <p style="text-align:center;font-size:13px;color:var(--text-muted);">
+        New to GigShield? <a href="/register" style="color:var(--warm-brown);font-weight:600;">Create Account →</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

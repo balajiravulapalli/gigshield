@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Review Report #{{ report.id }} — Admin{% endblock %}
+{% block content %}
+<div class="app-layout">
+  <aside class="sidebar">
+    <div style="padding:12px;margin-bottom:8px;"><span style="background:var(--crimson);color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;">Admin Portal</span></div>
+    <a href="/admin" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="/admin/users" class="sidebar-link"><i class="fas fa-users"></i> Users</a>
+    <a href="/admin/claims" class="sidebar-link"><i class="fas fa-file-invoice"></i> Claims</a>
+    <a href="/admin/reports" class="sidebar-link active"><i class="fas fa-flag"></i> Reports</a>
+    <a href="/admin/payouts" class="sidebar-link"><i class="fas fa-money-bill-wave"></i> Payouts</a>
+    <a href="/admin/fraud" class="sidebar-link"><i class="fas fa-shield-virus"></i> Fraud</a>
+    <div style="flex:1;"></div>
+    <a href="/logout" class="sidebar-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </aside>
+  <main class="main-content">
+    <div class="breadcrumb"><a href="/admin">Admin</a> / <a href="/admin/reports">Reports</a> / #{{ report.id }}</div>
+    <div class="page-header">
+      <h1>Report #{{ report.id }} Review</h1>
+    </div>
+    <div class="grid-2" style="align-items:start;">
+      <!-- Report details -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <div class="card">
+          <div class="card-title">📋 Report Details</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;padding:10px;background:var(--bg);border-radius:8px;font-size:13px;">
+              <span style="color:var(--text-muted);">User</span><strong>{{ report.user.full_name if report.user else '—' }}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px;background:var(--bg);border-radius:8px;font-size:13px;">
+              <span style="color:var(--text-muted);">Platform</span><strong>{{ report.platform_affected or report.user.platform if report.user else '—' }}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px;background:var(--bg);border-radius:8px;font-size:13px;">
+              <span style="color:var(--text-muted);">Issue Type</span><strong>{{ report.report_type|replace('_',' ')|title }}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px;background:var(--bg);border-radius:8px;font-size:13px;">
+              <span style="color:var(--text-muted);">Incident Date</span><strong>{{ report.incident_date.strftime('%d %b %Y') if report.incident_date else '—' }}</strong>
+            </div>
+          </div>
+          <div style="margin-top:16px;">
+            <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">User's Description</label>
+            <div style="background:var(--bg);border-radius:8px;padding:14px;font-size:13px;line-height:1.7;margin-top:6px;">{{ report.description }}</div>
+          </div>
+        </div>
+
+        {% if report.llm_review %}
+        <div class="card">
+          <div class="card-title" style="display:flex;align-items:center;gap:8px;">
+            <span style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;">🤖 AI Analysis</span>
+          </div>
+          <div style="display:flex;gap:10px;margin-bottom:14px;">
+            <span class="badge {% if report.llm_verdict == 'valid' %}badge-green{% elif report.llm_verdict == 'invalid' %}badge-red{% else %}badge-yellow{% endif %}">
+              AI: {{ report.llm_verdict|title }}
+            </span>
+            {% if report.llm_confidence %}<span class="badge badge-grey">{{ (report.llm_confidence*100)|int }}% confidence</span>{% endif %}
+          </div>
+          <div style="background:var(--bg);border-radius:8px;padding:14px;font-size:13px;line-height:1.7;color:var(--text);">
+            {{ report.llm_review }}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Admin decision form -->
+      <div class="card">
+        <div class="card-title">⚖️ Admin Decision</div>
+        <form method="POST">
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div class="form-group">
+              <label>Decision *</label>
+              <select name="decision" required>
+                <option value="">Select decision</option>
+                <option value="approved">✓ Approve — Issue payout</option>
+                <option value="rejected">✗ Reject — No payout</option>
+                <option value="escalated">↑ Escalate — Needs further review</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Payout Amount (₹) <span style="color:var(--text-muted);font-weight:400;">only if approved</span></label>
+              <input type="number" name="payout_amount" placeholder="0" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label>Admin Notes</label>
+              <textarea name="admin_notes" placeholder="Add internal notes about your decision..."></textarea>
+            </div>
+            <div style="background:#fff3cd;border-radius:8px;padding:14px;font-size:12px;color:#856404;">
+              <strong>⚠️ Policy Check:</strong> Verify this claim complies with GigShield policy before approving. Approved payouts are processed within 7 business days.
+            </div>
+            <button type="submit" class="btn btn-primary" style="justify-content:center;padding:13px;">
+              <i class="fas fa-check-circle"></i> Submit Decision
+            </button>
+            <a href="/admin/reports" class="btn btn-outline" style="justify-content:center;">← Back to Reports</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

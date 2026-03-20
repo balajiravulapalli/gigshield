@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Claims — GigShield{% endblock %}
+{% block content %}
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">Main</div>
+    <a href="/dashboard" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="/dashboard/policies" class="sidebar-link"><i class="fas fa-shield-alt"></i> My Policy</a>
+    <a href="/dashboard/subscribe" class="sidebar-link"><i class="fas fa-plus-circle"></i> Subscribe</a>
+    <div class="sidebar-section">Activity</div>
+    <a href="/dashboard/claims" class="sidebar-link active"><i class="fas fa-file-invoice"></i> Claims</a>
+    <a href="/dashboard/payments" class="sidebar-link"><i class="fas fa-receipt"></i> Payments</a>
+    <div class="sidebar-section">Support</div>
+    <a href="/dashboard/report" class="sidebar-link"><i class="fas fa-flag"></i> Report Issue</a>
+  </aside>
+  <main class="main-content">
+    <div class="page-header">
+      <h1>Claims History</h1>
+      <p>All your automatically triggered insurance claims and their status.</p>
+    </div>
+
+    <div style="background:#e8f4fd;border:1px solid #bee3f8;border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:13px;color:#2c5282;display:flex;gap:10px;align-items:flex-start;">
+      <i class="fas fa-info-circle" style="margin-top:2px;flex-shrink:0;"></i>
+      <span><strong>How claims work:</strong> Claims are created automatically when our AI detects a qualifying weather or social disruption in your area. You don't need to file anything. If you believe a valid disruption was missed, use the <a href="/dashboard/report" style="color:#2b6cb0;font-weight:600;">Report Issue</a> feature.</span>
+    </div>
+
+    <div class="card">
+      {% if claims %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Claim ID</th>
+              <th>Date</th>
+              <th>Disruption</th>
+              <th>Payout Type</th>
+              <th>Amount</th>
+              <th>Fraud Score</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for claim in claims %}
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted);font-family:monospace;">#{{ claim.id }}</td>
+            <td style="font-size:13px;">{{ claim.claim_date.strftime('%d %b %Y') }}</td>
+            <td>
+              <span style="display:flex;align-items:center;gap:6px;font-size:13px;">
+                {% if claim.disruption_type == 'heavy_rain' %}🌧️
+                {% elif claim.disruption_type == 'extreme_heat' %}🌡️
+                {% elif claim.disruption_type == 'high_wind' %}💨
+                {% elif claim.disruption_type == 'low_visibility' %}🌫️
+                {% elif claim.disruption_type == 'app_crash' %}📱
+                {% elif claim.disruption_type == 'curfew' %}🚫
+                {% else %}⚡{% endif %}
+                {{ claim.disruption_type|replace('_',' ')|title if claim.disruption_type else '—' }}
+              </span>
+            </td>
+            <td>
+              {% if claim.payout_type == 'full' %}<span class="badge badge-blue">Full Day</span>
+              {% elif claim.payout_type == 'half' %}<span class="badge badge-grey">Half Day</span>
+              {% else %}—{% endif %}
+            </td>
+            <td style="font-weight:700;font-size:15px;{% if claim.status == 'paid' %}color:#28a745{% endif %}">
+              {% if claim.payout_amount %}₹{{ claim.payout_amount|int }}{% else %}—{% endif %}
+            </td>
+            <td>
+              {% if claim.fraud_score is not none %}
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div style="width:50px;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+                  <div style="width:{{ (claim.fraud_score * 100)|int }}%;height:100%;background:{% if claim.fraud_score < 0.3 %}#28a745{% elif claim.fraud_score < 0.6 %}#ffc107{% else %}#dc3545{% endif %};"></div>
+                </div>
+                <span style="font-size:11px;color:var(--text-muted);">{{ (claim.fraud_score * 100)|int }}%</span>
+              </div>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if claim.status == 'paid' %}<span class="badge badge-green">✓ Paid</span>
+              {% elif claim.status == 'approved' %}<span class="badge badge-blue">Approved</span>
+              {% elif claim.status == 'pending' %}<span class="badge badge-yellow">Processing</span>
+              {% elif claim.status == 'rejected' %}<span class="badge badge-red">Rejected</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:60px;color:var(--text-muted);">
+        <div style="font-size:56px;margin-bottom:16px;">🌤️</div>
+        <h3 style="margin-bottom:8px;">No Claims Yet</h3>
+        <p style="max-width:320px;margin:0 auto;">No qualifying disruptions detected in your area so far. Keep delivering safely!</p>
+      </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}

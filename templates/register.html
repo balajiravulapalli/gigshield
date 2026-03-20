@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+{% block title %}Create Account — GigShield{% endblock %}
+
+{% block extra_css %}
+<style>
+  .reg-page {
+    min-height: calc(100vh - 64px);
+    display: flex;
+    background: var(--bg);
+  }
+  .reg-left {
+    width: 420px;
+    background: linear-gradient(145deg, #504746, #2c2422);
+    padding: 60px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+  }
+  .reg-left h2 { font-size: 32px; color: white; margin-bottom: 16px; }
+  .reg-left p { color: var(--pale-blush); line-height: 1.7; margin-bottom: 32px; font-size: 14px; }
+  .reg-benefit { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+  .reg-benefit .icon { width: 36px; height: 36px; background: rgba(251,188,0,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+  .reg-benefit .text h4 { color: white; font-size: 14px; font-family: 'DM Sans'; font-weight: 600; }
+  .reg-benefit .text p { color: var(--pale-blush); font-size: 13px; margin: 0; }
+  .reg-right { flex: 1; padding: 48px; overflow-y: auto; }
+  .reg-form-card { max-width: 620px; margin: 0 auto; }
+  .reg-form-card h1 { font-size: 28px; color: var(--charcoal); margin-bottom: 6px; }
+  .reg-form-card > p { color: var(--text-muted); margin-bottom: 32px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-section-title {
+    font-size: 12px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--warm-brown); margin: 24px 0 16px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .input-icon-wrap { position: relative; }
+  .input-icon-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--pale-blush); font-size: 14px; }
+  .input-icon-wrap input, .input-icon-wrap select { padding-left: 36px; }
+
+  /* Tier selector */
+  .tier-selector { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 8px; }
+  .tier-opt { cursor: pointer; }
+  .tier-opt input { display: none; }
+  .tier-opt-label {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 14px 8px; border-radius: 10px; border: 2px solid var(--border);
+    transition: all 0.2s; cursor: pointer; text-align: center;
+  }
+  .tier-opt input:checked + .tier-opt-label {
+    border-color: var(--charcoal); background: var(--charcoal); color: white;
+  }
+  .tier-opt-label .t-icon { font-size: 20px; }
+  .tier-opt-label .t-name { font-size: 11px; font-weight: 600; }
+  .tier-opt-label .t-price { font-size: 13px; font-weight: 700; color: var(--gold); }
+  .tier-opt input:checked + .tier-opt-label .t-price { color: var(--gold); }
+
+  /* Policy modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: white; border-radius: 16px; width: 700px; max-width: 95vw;
+    max-height: 90vh; display: flex; flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+  }
+  .modal-header {
+    background: var(--charcoal); color: white; padding: 20px 28px;
+    border-radius: 16px 16px 0 0;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-header h3 { font-family: 'DM Sans'; font-weight: 600; }
+  .modal-body { flex: 1; overflow-y: auto; padding: 28px; font-size: 13.5px; line-height: 1.8; color: var(--text); }
+  .modal-body h4 { color: var(--charcoal); font-size: 14px; margin: 20px 0 8px; }
+  .modal-body ul { padding-left: 20px; }
+  .modal-body li { margin-bottom: 6px; }
+  .scroll-progress { height: 4px; background: var(--border); position: relative; }
+  .scroll-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.1s; }
+  .modal-footer { padding: 20px 28px; border-top: 1px solid var(--border); }
+  .read-notice { font-size: 12px; color: var(--crimson); font-weight: 600; margin-bottom: 12px; display: none; }
+  .checkbox-group { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+  .checkbox-group input[type=checkbox] { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--charcoal); }
+  .checkbox-group label { font-size: 13px; color: var(--text); line-height: 1.5; }
+
+  /* Password strength */
+  .pwd-strength { height: 4px; border-radius: 2px; margin-top: 6px; background: var(--border); transition: all 0.3s; }
+  .pwd-text { font-size: 11px; margin-top: 4px; color: var(--text-muted); }
+
+  /* Step indicator */
+  .steps { display: flex; gap: 0; margin-bottom: 32px; }
+  .step { flex: 1; display: flex; align-items: center; gap: 8px; }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--border); color: var(--text-muted); font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step.active .step-num { background: var(--charcoal); color: white; }
+  .step.done .step-num { background: var(--gold); color: var(--charcoal); }
+  .step-text { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+  .step.active .step-text { color: var(--charcoal); }
+  .step-line { flex: 1; height: 1px; background: var(--border); margin: 0 8px; }
+
+  .error-list { background: #fff5f5; border: 1px solid #feb2b2; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: none; }
+  .error-list ul { list-style: none; padding: 0; }
+  .error-list li { font-size: 13px; color: var(--crimson); padding: 2px 0; }
+  .error-list li::before { content: '⚠️ '; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reg-page">
+  <!-- Left panel -->
+  <div class="reg-left">
+    <div>
+      <div style="font-size:48px;margin-bottom:20px;">🛡️</div>
+      <h2>Protect Your<br>Weekly Income</h2>
+      <p>Designed for delivery partners of all major platforms. Affordable, automatic, and always on your side.</p>
+      <div class="reg-benefit">
+        <div class="icon">⚡</div>
+        <div class="text"><h4>Instant Payouts</h4><p>Paid by end of day, automatically.</p></div>
+      </div>
+      <div class="reg-benefit">
+        <div class="icon">🌧️</div>
+        <div class="text"><h4>Weather Triggers</h4><p>AI detects disruptions in your zone.</p></div>
+      </div>
+      <div class="reg-benefit">
+        <div class="icon">📵</div>
+        <div class="text"><h4>App Outage Cover</h4><p>Platform crashes count too.</p></div>
+      </div>
+      <div class="reg-benefit">
+        <div class="icon">💰</div>
+        <div class="text"><h4>From ₹49/week</h4><p>Plans aligned to your pay cycle.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right form -->
+  <div class="reg-right">
+    <div class="reg-form-card">
+      <h1>Create Your Account</h1>
+      <p>Join GigShield and get covered in under 3 minutes.</p>
+
+      <div class="error-list" id="errorList">
+        <ul id="errorItems"></ul>
+      </div>
+
+      <form id="registerForm">
+        <!-- Personal Info -->
+        <div class="form-section-title">Personal Information</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Full Name *</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-user"></i>
+              <input type="text" name="full_name" placeholder="Raju Kumar" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Email Address *</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-envelope"></i>
+              <input type="email" name="email" placeholder="raju@example.com" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Phone Number *</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-phone"></i>
+              <input type="tel" name="phone" placeholder="9876543210" maxlength="10" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Pincode *</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-map-pin"></i>
+              <input type="text" name="pincode" id="pincode" placeholder="600001" maxlength="6" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>City</label>
+            <input type="text" name="city" id="city" placeholder="Chennai">
+          </div>
+          <div class="form-group">
+            <label>State</label>
+            <input type="text" name="state" id="state" placeholder="Tamil Nadu">
+          </div>
+        </div>
+
+        <!-- Platform -->
+        <div class="form-section-title">Delivery Platform</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Your Platform *</label>
+            <select name="platform" required>
+              <option value="">Select your platform</option>
+              <option value="zomato">🍕 Zomato</option>
+              <option value="swiggy">🍔 Swiggy</option>
+              <option value="amazon">📦 Amazon Flex</option>
+              <option value="flipkart">🛍️ Flipkart Delivery</option>
+              <option value="zepto">⚡ Zepto</option>
+              <option value="blinkit">💛 Blinkit</option>
+              <option value="dunzo">🔵 Dunzo</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Delivery Partner ID</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-id-badge"></i>
+              <input type="text" name="partner_id" placeholder="Your platform agent ID">
+            </div>
+          </div>
+        </div>
+
+        <!-- Tier Selection -->
+        <div class="form-section-title">Choose Your Plan</div>
+        <div class="tier-selector">
+          {% set tier_icons = {'basic':'🥉','gold':'🥇','platinum':'💎','diamond':'💠','diamond+':'👑'} %}
+          {% for tier_name, tier in tiers.items() %}
+          <label class="tier-opt">
+            <input type="radio" name="tier_preference" value="{{ tier_name }}" {% if tier_name == 'platinum' %}checked{% endif %}>
+            <div class="tier-opt-label">
+              <span class="t-icon">{{ tier_icons[tier_name] }}</span>
+              <span class="t-name">{{ tier_name.replace('+',' Plus').title() }}</span>
+              <span class="t-price">₹{{ tier.weekly_premium }}</span>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">You can upgrade or change your plan after registration.</p>
+
+        <!-- Password -->
+        <div class="form-section-title">Set Password</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Password *</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-lock"></i>
+              <input type="password" name="password" id="password" placeholder="Min. 8 characters" required>
+            </div>
+            <div class="pwd-strength" id="pwdStrength"></div>
+            <div class="pwd-text" id="pwdText"></div>
+          </div>
+          <div class="form-group">
+            <label>Confirm Password *</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-lock"></i>
+              <input type="password" name="confirm_password" id="confirmPwd" placeholder="Repeat password" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Policy -->
+        <div class="form-section-title">Terms & Policy</div>
+        <div style="background:var(--bg);border-radius:10px;padding:16px;border:1px solid var(--border);margin-bottom:16px;">
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">You must read the complete policy before accepting. Scroll to the bottom to unlock the checkbox.</p>
+          <button type="button" class="btn btn-outline btn-sm" onclick="openPolicyModal()">
+            <i class="fas fa-file-contract"></i> Read Full Policy & Terms
+          </button>
+        </div>
+        <div class="checkbox-group" id="policyCheckboxGroup" style="opacity:0.4;pointer-events:none;">
+          <input type="checkbox" id="policyAccept" name="policy_accepted_check">
+          <label for="policyAccept">I have read and agree to the GigShield <strong>Terms, Conditions & Insurance Policy</strong>. I understand this covers income loss from weather/social disruptions only, and explicitly excludes health, vehicle, and accident insurance.</label>
+        </div>
+        <input type="hidden" name="policy_accepted" id="hiddenPolicyAccepted" value="false">
+        <input type="hidden" name="policy_scrolled" id="hiddenPolicyScrolled" value="false">
+
+        <button type="submit" class="btn btn-primary w-full" style="padding:14px;font-size:15px;justify-content:center;margin-top:8px;" id="submitBtn">
+          <i class="fas fa-shield-alt"></i> Create Account & Get Protected
+        </button>
+        <p style="text-align:center;font-size:13px;color:var(--text-muted);margin-top:16px;">
+          Already have an account? <a href="/login" style="color:var(--warm-brown);font-weight:600;">Login here</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Policy Modal -->
+<div class="modal-overlay" id="policyModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>🛡️ GigShield Insurance Policy & Terms of Service</h3>
+      <span style="color:var(--pale-blush);font-size:13px;" id="readProgress">Scroll to read...</span>
+    </div>
+    <div class="scroll-progress"><div class="scroll-bar" id="scrollBar"></div></div>
+    <div class="modal-body" id="policyBody">
+      <p><strong>Effective Date:</strong> March 2026 &nbsp;|&nbsp; <strong>Policy Version:</strong> 1.0</p>
+
+      <h4>1. COVERAGE SCOPE — WHAT IS COVERED</h4>
+      <p>GigShield provides <strong>parametric income protection insurance</strong> exclusively for platform-based delivery partners (hereinafter "Insured Partner"). This policy covers <strong>loss of income</strong> arising solely from the following qualifying external disruptions:</p>
+      <ul>
+        <li><strong>Environmental Disruptions:</strong> Rainfall exceeding 15mm/hour, temperatures exceeding 42°C or below 5°C, wind speeds exceeding 60km/h, visibility below 200m (fog/dust storms), severe flooding as reported by weather agencies.</li>
+        <li><strong>Social Disruptions:</strong> Government-declared curfews, city-wide/zone-wide strikes affecting delivery access, sudden market or delivery zone closures mandated by public authority.</li>
+        <li><strong>Platform Disruptions:</strong> Verified platform-wide app outages exceeding 3 consecutive hours as confirmed by Downdetector and/or partner platform API, directly preventing completion of deliveries.</li>
+      </ul>
+
+      <h4>2. WHAT IS EXPLICITLY NOT COVERED</h4>
+      <p>The following are <strong>strictly excluded</strong> from this policy. GigShield will not pay for, and no claim will be processed relating to:</p>
+      <ul>
+        <li>❌ Health insurance, hospitalisation, medical expenses, or any illness-related claims</li>
+        <li>❌ Accident insurance, personal injury, or disability</li>
+        <li>❌ Vehicle repair, maintenance, fuel costs, or any vehicle-related expenses</li>
+        <li>❌ Income loss due to personal choice, voluntary non-working days, or personal emergencies</li>
+        <li>❌ Loss of earnings due to low order volume, competitive factors, or platform algorithmic changes</li>
+        <li>❌ Any losses on days when the Insured Partner is verified to have completed one or more deliveries</li>
+        <li>❌ Claims filed more than 72 hours after the qualifying disruption event</li>
+      </ul>
+
+      <h4>3. PAYOUT STRUCTURE</h4>
+      <p>Payouts are classified as:</p>
+      <ul>
+        <li><strong>Full-Day Payout:</strong> Issued when qualifying disruption exceeds threshold levels and is sustained for ≥6 hours within the delivery operating window (06:00–22:00 IST).</li>
+        <li><strong>Half-Day Payout:</strong> Issued when qualifying disruption is sustained for 3–5.99 hours within the delivery operating window.</li>
+        <li>Payout amounts are defined by your selected tier and are processed by 23:59 IST on the day of disruption, or within 24 hours.</li>
+        <li>Weekly records are maintained. A day where deliveries are confirmed via partner API data will have payout eligibility automatically voided, even if a disruption was logged.</li>
+      </ul>
+
+      <h4>4. PREMIUM & BILLING</h4>
+      <ul>
+        <li>Premiums are billed on a <strong>weekly cycle</strong>, beginning from the date of subscription.</li>
+        <li>Non-payment will result in immediate suspension of coverage without refund of unused premium days.</li>
+        <li>Premiums may be revised with 14 days' notice. Continued use constitutes acceptance of revised rates.</li>
+        <li>No pro-rated refunds are available for partial weeks unless the policy is cancelled within 48 hours of the first payment.</li>
+      </ul>
+
+      <h4>5. FRAUD PREVENTION & TERMINATION</h4>
+      <ul>
+        <li>GigShield employs AI-powered fraud detection. Claims flagged as fraudulent will be investigated and may result in <strong>immediate policy termination without refund</strong>.</li>
+        <li>GPS spoofing, false weather claim assertions, duplicate claims, or submitting claims on days where delivery activity is verified will constitute fraud.</li>
+        <li>GigShield reserves the right to share fraud findings with partner platforms and law enforcement.</li>
+        <li>A fraud score is calculated for every claim. A score ≥0.6 triggers manual review. A score ≥0.8 may result in automatic rejection.</li>
+      </ul>
+
+      <h4>6. CLAIM VERIFICATION</h4>
+      <ul>
+        <li>All claims are verified against: (a) OpenWeatherMap data for the user's registered pincode; (b) Partner platform delivery logs; (c) Downdetector outage records; (d) Historical claim patterns.</li>
+        <li>GigShield's determination of disruption severity is final and binding. No appeals on weather data interpretation will be entertained.</li>
+        <li>Disputes may be submitted via the in-app report system and will be reviewed by our AI + human team within 7 business days.</li>
+      </ul>
+
+      <h4>7. DATA PRIVACY & PARTNER SHARING</h4>
+      <ul>
+        <li>Delivery activity data is retrieved from your registered platform (Zomato, Swiggy, Amazon, etc.) via partner API integration. By accepting this policy, you <strong>consent to this data sharing</strong>.</li>
+        <li>Your personal data is stored securely in encrypted databases. It will not be sold to third parties for marketing purposes.</li>
+        <li>Claim data, fraud flags, and audit records may be shared with partner platforms and regulatory authorities as required by law.</li>
+      </ul>
+
+      <h4>8. LIMITATION OF LIABILITY</h4>
+      <p>GigShield's total aggregate liability in any calendar month shall not exceed 10x the monthly premium paid by the Insured Partner. GigShield is not liable for indirect, consequential, or punitive damages of any kind.</p>
+
+      <h4>9. GOVERNING LAW</h4>
+      <p>This policy is governed by the laws of India. All disputes are subject to the exclusive jurisdiction of courts in Bengaluru, Karnataka.</p>
+
+      <h4>10. AMENDMENTS</h4>
+      <p>GigShield reserves the right to amend this policy at any time. Material changes will be communicated via email 14 days in advance. Continued use of the platform constitutes acceptance of amendments.</p>
+
+      <div style="background:#fff3cd;border-radius:8px;padding:16px;margin-top:24px;border-left:4px solid var(--gold);">
+        <strong>⚠️ Important Reminder:</strong> This is income loss insurance ONLY. It does not cover health, vehicle repairs, accidents, or any personal injuries. By accepting, you confirm you have read and understood all terms above.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="read-notice" id="readNotice">⬆️ Please scroll through the entire policy to continue.</div>
+      <div class="checkbox-group" id="modalCheckbox" style="opacity:0.4;pointer-events:none;">
+        <input type="checkbox" id="modalAccept">
+        <label for="modalAccept">I have read and fully understand the GigShield Insurance Policy and Terms of Service.</label>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <button class="btn btn-outline btn-sm" onclick="closePolicyModal()">Close</button>
+        <button class="btn btn-primary btn-sm" id="acceptBtn" onclick="acceptPolicy()" disabled>Accept Policy</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Pincode autofill
+  document.getElementById('pincode').addEventListener('blur', async function() {
+    const pc = this.value;
+    if (pc.length === 6) {
+      try {
+        const r = await fetch(`https://api.postalpincode.in/pincode/${pc}`);
+        const data = await r.json();
+        if (data[0].Status === 'Success') {
+          const po = data[0].PostOffice[0];
+          document.getElementById('city').value = po.District;
+          document.getElementById('state').value = po.State;
+        }
+      } catch(e) {}
+    }
+  });
+
+  // Password strength
+  document.getElementById('password').addEventListener('input', function() {
+    const v = this.value;
+    const bar = document.getElementById('pwdStrength');
+    const txt = document.getElementById('pwdText');
+    let strength = 0;
+    if (v.length >= 8) strength++;
+    if (/[A-Z]/.test(v)) strength++;
+    if (/[0-9]/.test(v)) strength++;
+    if (/[^A-Za-z0-9]/.test(v)) strength++;
+    const colors = ['', '#e53e3e', '#ed8936', '#48bb78', '#38a169'];
+    const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+    bar.style.background = colors[strength] || '#eee';
+    bar.style.width = (strength * 25) + '%';
+    txt.textContent = labels[strength] || '';
+    txt.style.color = colors[strength];
+  });
+
+  // Policy modal
+  let policyScrolled = false;
+  function openPolicyModal() {
+    document.getElementById('policyModal').classList.add('show');
+    document.getElementById('readNotice').style.display = 'block';
+  }
+  function closePolicyModal() {
+    document.getElementById('policyModal').classList.remove('show');
+  }
+
+  document.getElementById('policyBody').addEventListener('scroll', function() {
+    const el = this;
+    const pct = (el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100;
+    document.getElementById('scrollBar').style.width = pct + '%';
+    document.getElementById('readProgress').textContent = Math.round(pct) + '% read';
+    if (pct >= 95 && !policyScrolled) {
+      policyScrolled = true;
+      document.getElementById('modalCheckbox').style.opacity = '1';
+      document.getElementById('modalCheckbox').style.pointerEvents = 'auto';
+      document.getElementById('readNotice').style.display = 'none';
+    }
+  });
+
+  document.getElementById('modalAccept').addEventListener('change', function() {
+    document.getElementById('acceptBtn').disabled = !this.checked;
+  });
+
+  function acceptPolicy() {
+    if (!policyScrolled) { alert('Please scroll through the entire policy first.'); return; }
+    if (!document.getElementById('modalAccept').checked) { alert('Please check the acceptance box.'); return; }
+    document.getElementById('hiddenPolicyAccepted').value = 'true';
+    document.getElementById('hiddenPolicyScrolled').value = 'true';
+    const cbGroup = document.getElementById('policyCheckboxGroup');
+    cbGroup.style.opacity = '1';
+    cbGroup.style.pointerEvents = 'auto';
+    document.getElementById('policyAccept').checked = true;
+    closePolicyModal();
+    showToast('Policy accepted. You can now complete registration.', 'success');
+  }
+
+  // Form submit
+  document.getElementById('registerForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+
+    if (document.getElementById('hiddenPolicyAccepted').value !== 'true') {
+      showToast('Please read and accept the policy first.', 'error');
+      return;
+    }
+    if (!document.getElementById('policyAccept').checked) {
+      showToast('Please check the Terms & Policy acceptance box.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+
+    const fd = new FormData(this);
+    const resp = await fetch('/register', { method: 'POST', body: fd });
+    const data = await resp.json();
+
+    if (data.success) {
+      showToast('Account created! Check your email for OTP.', 'success');
+      setTimeout(() => window.location.href = data.redirect, 1200);
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-shield-alt"></i> Create Account & Get Protected';
+      const el = document.getElementById('errorList');
+      const ul = document.getElementById('errorItems');
+      ul.innerHTML = data.errors.map(e => `<li>${e}</li>`).join('');
+      el.style.display = 'block';
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+</script>
+{% endblock %}

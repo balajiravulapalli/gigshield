@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Subscribe — GigShield{% endblock %}
+{% block extra_css %}
+<style>
+  .tier-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 40px; }
+  .tier-card {
+    border: 2px solid var(--border);
+    border-radius: 16px; padding: 28px 16px; text-align: center;
+    cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden;
+    background: white;
+  }
+  .tier-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+  .tier-card.selected { border-color: var(--charcoal); background: var(--charcoal); color: white; }
+  .tier-card.selected .tier-name { color: white; }
+  .tier-card.selected .tier-features li { color: var(--pale-blush); }
+  .tier-card .featured-badge { position: absolute; top: 0; right: 0; background: var(--gold); color: var(--charcoal); font-size: 9px; font-weight: 700; padding: 4px 10px; border-radius: 0 16px 0 8px; letter-spacing: 1px; }
+  .tier-icon { font-size: 36px; margin-bottom: 10px; }
+  .tier-name { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--charcoal); margin-bottom: 4px; }
+  .tier-price { font-size: 28px; font-weight: 700; color: var(--gold); font-family: 'Playfair Display', serif; margin-bottom: 2px; }
+  .tier-price-label { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+  .tier-card.selected .tier-price-label { color: var(--pale-blush); }
+  .tier-features { list-style: none; text-align: left; font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px; }
+  .tier-features li::before { content: '✓ '; color: var(--gold); font-weight: 700; }
+  .tier-select-btn { width: 100%; padding: 10px; border-radius: 8px; border: 1.5px solid var(--border); background: white; cursor: pointer; font-family: 'DM Sans'; font-size: 13px; font-weight: 600; color: var(--charcoal); transition: all 0.2s; }
+  .tier-card.selected .tier-select-btn { background: var(--gold); border-color: var(--gold); color: var(--charcoal); }
+
+  .payment-section { max-width: 500px; margin: 0 auto; }
+  .payment-card { background: white; border-radius: 16px; padding: 32px; border: 1px solid var(--border); }
+  .payment-card h3 { font-size: 18px; margin-bottom: 20px; color: var(--charcoal); }
+  .amount-display { background: linear-gradient(135deg, #504746, #2c2422); border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px; color: white; }
+  .amount-display .amount { font-size: 40px; font-weight: 700; font-family: 'Playfair Display', serif; color: var(--gold); }
+  .amount-display .period { font-size: 14px; opacity: 0.7; }
+  .pay-method { border: 1.5px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
+  .pay-method:hover { border-color: var(--charcoal); }
+  .pay-method img { width: 32px; height: 20px; object-fit: contain; }
+  .secured-badge { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--text-muted); margin-top: 16px; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">Main</div>
+    <a href="/dashboard" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="/dashboard/policies" class="sidebar-link"><i class="fas fa-shield-alt"></i> My Policy</a>
+    <a href="/dashboard/subscribe" class="sidebar-link active"><i class="fas fa-plus-circle"></i> Subscribe</a>
+    <div class="sidebar-section">Activity</div>
+    <a href="/dashboard/claims" class="sidebar-link"><i class="fas fa-file-invoice"></i> Claims</a>
+    <a href="/dashboard/payments" class="sidebar-link"><i class="fas fa-receipt"></i> Payments</a>
+    <div class="sidebar-section">Support</div>
+    <a href="/dashboard/report" class="sidebar-link"><i class="fas fa-flag"></i> Report Issue</a>
+  </aside>
+  <main class="main-content">
+    <div class="page-header">
+      <h1>Choose Your Plan</h1>
+      <p>Select the coverage tier that best matches your weekly earnings. Cancel anytime.</p>
+    </div>
+
+    <!-- Tier selector -->
+    {% set tier_icons = {'basic':'🥉','gold':'🥇','platinum':'💎','diamond':'💠','diamond+':'👑'} %}
+    <div class="tier-grid" id="tierGrid">
+      {% for tier_name, tier in tiers.items() %}
+      <div class="tier-card {% if tier_name == 'platinum' %}selected{% endif %}" data-tier="{{ tier_name }}" data-premium="{{ tier.weekly_premium }}" data-payout="{{ tier.daily_payout }}" data-days="{{ tier.max_days }}" onclick="selectTier(this)">
+        {% if tier_name == 'platinum' %}<div class="featured-badge">POPULAR</div>{% endif %}
+        <div class="tier-icon">{{ tier_icons[tier_name] }}</div>
+        <div class="tier-name">{{ tier_name.replace('+',' Plus').title() }}</div>
+        <div class="tier-price">₹{{ tier.weekly_premium }}</div>
+        <div class="tier-price-label">per week</div>
+        <ul class="tier-features">
+          <li>₹{{ tier.daily_payout }} full-day payout</li>
+          <li>₹{{ (tier.daily_payout / 2)|int }} half-day payout</li>
+          <li>Up to {{ tier.max_days }} days covered</li>
+          <li>Auto weather detection</li>
+          <li>Social disruption cover</li>
+        </ul>
+        <button class="tier-select-btn">{% if tier_name == 'platinum' %}Selected ✓{% else %}Select{% endif %}</button>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Payment section -->
+    <div class="payment-section">
+      <div class="payment-card">
+        <h3>💳 Complete Your Subscription</h3>
+        <div class="amount-display">
+          <div style="font-size:13px;opacity:0.7;margin-bottom:4px;">Selected Plan: <span id="selectedTierName">Platinum</span></div>
+          <div class="amount">₹<span id="selectedAmount">149</span></div>
+          <div class="period">charged weekly · auto-renews</div>
+        </div>
+
+        <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:20px;font-size:13px;color:var(--text-muted);">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div>📅 Billing: <strong>Weekly</strong></div>
+            <div>🛡️ Coverage: <strong>Immediate</strong></div>
+            <div>💰 Daily Payout: <strong>₹<span id="dailyPayout">500</span></strong></div>
+            <div>📆 Max Days: <strong><span id="maxDays">5</span>/week</strong></div>
+          </div>
+        </div>
+
+        <div style="padding:14px;background:#fff3cd;border-radius:10px;margin-bottom:20px;font-size:12px;color:#856404;">
+          <strong>⚠️ Coverage Reminder:</strong> This policy covers income loss from weather/social disruptions ONLY. Health, vehicle, and accident claims are not covered.
+        </div>
+
+        <button class="btn btn-gold w-full" style="padding:15px;font-size:16px;justify-content:center;" id="payBtn" onclick="initiatePayment()">
+          <i class="fas fa-lock"></i> Pay Securely with Razorpay
+        </button>
+        <div class="secured-badge">
+          <i class="fas fa-shield-alt" style="color:#28a745;"></i>
+          256-bit encrypted · Razorpay secured · PCI DSS compliant
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  let selectedTier = 'platinum';
+
+  function selectTier(el) {
+    document.querySelectorAll('.tier-card').forEach(c => {
+      c.classList.remove('selected');
+      c.querySelector('.tier-select-btn').textContent = 'Select';
+    });
+    el.classList.add('selected');
+    el.querySelector('.tier-select-btn').textContent = 'Selected ✓';
+    selectedTier = el.dataset.tier;
+    document.getElementById('selectedTierName').textContent = selectedTier.replace('+', ' Plus').replace(/\b\w/g, c => c.toUpperCase());
+    document.getElementById('selectedAmount').textContent = el.dataset.premium;
+    document.getElementById('dailyPayout').textContent = el.dataset.payout;
+    document.getElementById('maxDays').textContent = el.dataset.days;
+  }
+
+  async function initiatePayment() {
+    const btn = document.getElementById('payBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    const resp = await fetch('/dashboard/subscribe', {
+      method: 'POST',
+      body: new URLSearchParams({ tier: selectedTier }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    const data = await resp.json();
+
+    if (!data.success) {
+      showToast(data.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-lock"></i> Pay Securely with Razorpay';
+      return;
+    }
+
+    // If mock order (dev mode), simulate success
+    if (data.order_id && data.order_id.startsWith('mock_order_')) {
+      await fetch('/dashboard/payment-success', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razorpay_order_id: data.order_id,
+          razorpay_payment_id: 'mock_pay_' + Date.now(),
+          razorpay_signature: 'mock_sig'
+        })
+      });
+      showToast('Policy activated! Welcome to GigShield.', 'success');
+      setTimeout(() => window.location.href = '/dashboard', 1500);
+      return;
+    }
+
+    // Real Razorpay checkout
+    const options = {
+      key: data.razorpay_key,
+      amount: data.amount,
+      currency: 'INR',
+      name: 'GigShield',
+      description: `${data.tier.replace('+',' Plus').toUpperCase()} Plan — Weekly Premium`,
+      order_id: data.order_id,
+      theme: { color: '#504746' },
+      handler: async function(response) {
+        const verifyResp = await fetch('/dashboard/payment-success', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(response)
+        });
+        const vData = await verifyResp.json();
+        if (vData.success) {
+          showToast('Payment successful! Policy activated.', 'success');
+          setTimeout(() => window.location.href = '/dashboard', 1500);
+        } else {
+          showToast(vData.message || 'Payment verification failed.', 'error');
+        }
+      },
+      modal: {
+        ondismiss: function() {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-lock"></i> Pay Securely with Razorpay';
+        }
+      }
+    };
+    const rzp = new Razorpay(options);
+    rzp.open();
+  }
+</script>
+{% endblock %}

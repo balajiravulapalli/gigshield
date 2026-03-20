@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — GigShield{% endblock %}
+{% block extra_css %}
+<style>
+  .admin-badge { background: var(--crimson); color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: 1px; text-transform: uppercase; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="app-layout">
+  <aside class="sidebar">
+    <div style="padding:12px;margin-bottom:8px;">
+      <span class="admin-badge">Admin Portal</span>
+    </div>
+    <a href="/admin" class="sidebar-link active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="/admin/users" class="sidebar-link"><i class="fas fa-users"></i> Users</a>
+    <a href="/admin/claims" class="sidebar-link"><i class="fas fa-file-invoice"></i> Claims</a>
+    <a href="/admin/reports" class="sidebar-link"><i class="fas fa-flag"></i> Reports <span style="background:var(--crimson);color:white;border-radius:20px;padding:1px 7px;font-size:11px;margin-left:4px;">{{ stats.pending_reports }}</span></a>
+    <a href="/admin/payouts" class="sidebar-link"><i class="fas fa-money-bill-wave"></i> Payouts</a>
+    <a href="/admin/fraud" class="sidebar-link"><i class="fas fa-shield-virus"></i> Fraud <span style="background:#ffc107;color:#333;border-radius:20px;padding:1px 7px;font-size:11px;margin-left:4px;">{{ stats.fraud_flagged }}</span></a>
+    <a href="/admin/weather-logs" class="sidebar-link"><i class="fas fa-cloud-sun"></i> Weather Logs</a>
+    <div style="flex:1;"></div>
+    <a href="/logout" class="sidebar-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </aside>
+  <main class="main-content">
+    <div class="page-header flex justify-between items-center">
+      <div>
+        <h1>Admin Overview</h1>
+        <p>GigShield platform metrics and operations.</p>
+      </div>
+      <span class="admin-badge" style="font-size:12px;padding:6px 14px;">🛡️ Super Admin</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid-4" style="margin-bottom:24px;">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#d4edda;">👥</div>
+        <div class="stat-value">{{ stats.total_users }}</div>
+        <div class="stat-label">Total Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#cce5ff;">🛡️</div>
+        <div class="stat-value">{{ stats.active_policies }}</div>
+        <div class="stat-label">Active Policies</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fff3cd;">📋</div>
+        <div class="stat-value">{{ stats.pending_claims }}</div>
+        <div class="stat-label">Pending Claims</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#f8d7da;">💸</div>
+        <div class="stat-value">₹{{ stats.today_payouts|int }}</div>
+        <div class="stat-label">Today's Payouts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#d4edda;">💰</div>
+        <div class="stat-value">₹{{ stats.week_premium|int }}</div>
+        <div class="stat-label">Week's Premium</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#f8d7da;">🚨</div>
+        <div class="stat-value" style="color:var(--crimson);">{{ stats.fraud_flagged }}</div>
+        <div class="stat-label">Fraud Flagged</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fff3cd;">📝</div>
+        <div class="stat-value" style="color:#856404;">{{ stats.pending_reports }}</div>
+        <div class="stat-label">Pending Reports</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#e2d9f3;">📊</div>
+        <div class="stat-value">{{ ((stats.today_payouts / (stats.week_premium / 7)) * 100)|int if stats.week_premium > 0 else 0 }}%</div>
+        <div class="stat-label">Today Loss Ratio</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+      <!-- Weekly chart -->
+      <div class="card">
+        <div class="card-title">📈 Weekly Premium vs Payout (Last 4 Weeks)</div>
+        <canvas id="weeklyChart" height="220"></canvas>
+      </div>
+
+      <!-- Pending reports -->
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <div class="card-title" style="margin-bottom:0;">🚨 Pending Reports</div>
+          <a href="/admin/reports" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        {% if recent_reports %}
+        <div style="display:flex;flex-direction:column;gap:10px;">
+        {% for rep in recent_reports %}
+        <div style="border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:14px;font-weight:600;">{{ rep.user.full_name if rep.user else '—' }}</div>
+            <div style="font-size:12px;color:var(--text-muted);">{{ rep.report_type|replace('_',' ')|title }} · {{ rep.created_at.strftime('%d %b') }}</div>
+            {% if rep.llm_verdict %}<span class="badge {% if rep.llm_verdict == 'valid' %}badge-green{% elif rep.llm_verdict == 'invalid' %}badge-red{% else %}badge-yellow{% endif %}" style="margin-top:4px;font-size:10px;">AI: {{ rep.llm_verdict }}</span>{% endif %}
+          </div>
+          <a href="/admin/reports/{{ rep.id }}/review" class="btn btn-outline btn-sm">Review</a>
+        </div>
+        {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:32px;color:var(--text-muted);">No pending reports 🎉</div>
+        {% endif %}
+      </div>
+
+      <!-- Recent claims -->
+      <div class="card" style="grid-column:1/-1;">
+        <div class="flex justify-between items-center mb-4">
+          <div class="card-title" style="margin-bottom:0;">📋 Recent Claims</div>
+          <a href="/admin/claims" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>User</th><th>Date</th><th>Disruption</th><th>Amount</th><th>Fraud Score</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+            {% for claim in recent_claims %}
+            <tr>
+              <td style="font-size:12px;color:var(--text-muted);">#{{ claim.id }}</td>
+              <td style="font-size:13px;">{{ claim.user.full_name if claim.user else '—' }}</td>
+              <td style="font-size:13px;">{{ claim.claim_date.strftime('%d %b') }}</td>
+              <td style="font-size:13px;">{{ claim.disruption_type|replace('_',' ')|title if claim.disruption_type else '—' }}</td>
+              <td style="font-weight:600;">{% if claim.payout_amount %}₹{{ claim.payout_amount|int }}{% else %}—{% endif %}</td>
+              <td>
+                {% if claim.fraud_score is not none %}
+                <span style="font-weight:700;color:{% if claim.fraud_score < 0.3 %}#28a745{% elif claim.fraud_score < 0.6 %}#ffc107{% else %}#dc3545{% endif %};">
+                  {{ (claim.fraud_score * 100)|int }}%
+                </span>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% if claim.status == 'paid' %}<span class="badge badge-green">Paid</span>
+                {% elif claim.status == 'approved' %}<span class="badge badge-blue">Approved</span>
+                {% elif claim.status == 'pending' %}<span class="badge badge-yellow">Pending</span>
+                {% elif claim.status == 'rejected' %}<span class="badge badge-red">Rejected</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if claim.status == 'pending' %}
+                <div style="display:flex;gap:6px;">
+                  <button class="btn btn-sm" style="background:#d4edda;color:#155724;border:none;padding:5px 10px;" onclick="claimAction({{ claim.id }}, 'approve')">✓ Approve</button>
+                  <button class="btn btn-sm" style="background:#f8d7da;color:#721c24;border:none;padding:5px 10px;" onclick="claimAction({{ claim.id }}, 'reject')">✗ Reject</button>
+                </div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+  const chartData = {{ chart_data|safe }};
+  const ctx = document.getElementById('weeklyChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: chartData.map(d => d.week),
+      datasets: [
+        { label: 'Premium Collected', data: chartData.map(d => d.premium), backgroundColor: 'rgba(80,71,70,0.8)', borderRadius: 6 },
+        { label: 'Payouts Made', data: chartData.map(d => d.payout), backgroundColor: 'rgba(182,36,79,0.7)', borderRadius: 6 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: {
+        y: { ticks: { callback: v => '₹' + v }, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  async function claimAction(id, action) {
+    if (!confirm(`${action === 'approve' ? 'Approve' : 'Reject'} claim #${id}?`)) return;
+    const r = await fetch(`/admin/claims/${id}/action`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ action })
+    });
+    const d = await r.json();
+    if (d.success) { showToast('Claim ' + action + 'd.', 'success'); setTimeout(() => location.reload(), 800); }
+    else showToast('Action failed.', 'error');
+  }
+</script>
+{% endblock %}

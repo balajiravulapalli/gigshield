@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% block title %}GigShield — Protect Your Income{% endblock %}
+
+{% block extra_css %}
+<style>
+  .hero {
+    background: linear-gradient(135deg, #504746 0%, #3a2f2e 40%, #1a1210 100%);
+    min-height: 92vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(251,188,0,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -20%;
+    left: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(182,36,79,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 48px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+  .hero-left h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 54px;
+    font-weight: 700;
+    color: white;
+    line-height: 1.15;
+    margin-bottom: 20px;
+  }
+  .hero-left h1 span { color: var(--gold); }
+  .hero-left p {
+    font-size: 17px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.7;
+    margin-bottom: 36px;
+  }
+  .hero-btns { display: flex; gap: 14px; }
+  .hero-btns .btn { padding: 14px 28px; font-size: 15px; border-radius: 10px; }
+  .hero-stat-strip {
+    display: flex;
+    gap: 32px;
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+  }
+  .hero-stat-strip .stat { text-align: left; }
+  .hero-stat-strip .num { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--gold); }
+  .hero-stat-strip .lbl { font-size: 12px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Shield visual */
+  .hero-right { position: relative; display: flex; justify-content: center; align-items: center; }
+  .shield-visual {
+    width: 340px; height: 380px;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .shield-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(145deg, rgba(251,188,0,0.15), rgba(182,36,79,0.1));
+    border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+    border: 2px solid rgba(251,188,0,0.2);
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+  .shield-icon-lg { font-size: 120px; position: relative; z-index: 2; filter: drop-shadow(0 8px 32px rgba(251,188,0,0.4)); }
+  .floating-badge {
+    position: absolute;
+    background: white;
+    border-radius: 12px;
+    padding: 10px 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600;
+    white-space: nowrap;
+    animation: floatBadge 4s ease-in-out infinite;
+  }
+  .floating-badge:nth-child(2) { top: 15%; right: -10%; animation-delay: -1s; }
+  .floating-badge:nth-child(3) { bottom: 20%; left: -12%; animation-delay: -2s; }
+  .floating-badge:nth-child(4) { top: 55%; right: -8%; animation-delay: -3s; }
+  @keyframes floatBadge { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .fb-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+  /* Features */
+  .features { background: var(--bg); padding: 100px 48px; }
+  .section-header { text-align: center; max-width: 600px; margin: 0 auto 60px; }
+  .section-header .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--warm-brown); margin-bottom: 12px; }
+  .section-header h2 { font-size: 38px; color: var(--charcoal); margin-bottom: 16px; }
+  .section-header p { color: var(--text-muted); line-height: 1.7; }
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1100px; margin: 0 auto; }
+  .feature-card {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    border: 1px solid var(--border);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .feature-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 20px; }
+  .feature-card h3 { font-family: 'Playfair Display', serif; font-size: 19px; margin-bottom: 10px; color: var(--charcoal); }
+  .feature-card p { color: var(--text-muted); font-size: 14px; line-height: 1.7; }
+
+  /* Tiers */
+  .tiers-section { background: var(--charcoal); padding: 100px 48px; }
+  .tiers-section .section-header h2 { color: white; }
+  .tiers-section .section-header p { color: var(--pale-blush); }
+  .tiers-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; max-width: 1100px; margin: 0 auto; }
+  .tier-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .tier-card:hover { background: rgba(255,255,255,0.1); transform: translateY(-4px); }
+  .tier-card.featured { border-color: var(--gold); background: rgba(251,188,0,0.08); }
+  .tier-card.featured::before { content: 'POPULAR'; position: absolute; top: 14px; right: -22px; background: var(--gold); color: var(--charcoal); font-size: 9px; font-weight: 700; letter-spacing: 1px; padding: 4px 32px; transform: rotate(45deg); }
+  .tier-name { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: white; margin-bottom: 6px; }
+  .tier-price { font-size: 32px; font-weight: 700; color: var(--gold); font-family: 'Playfair Display', serif; }
+  .tier-price span { font-size: 14px; font-weight: 400; color: var(--pale-blush); }
+  .tier-payout { color: rgba(255,255,255,0.65); font-size: 13px; margin: 12px 0 20px; }
+  .tier-features { text-align: left; display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .tier-feature { font-size: 12px; color: var(--pale-blush); display: flex; align-items: center; gap: 6px; }
+  .tier-feature i { color: var(--gold); font-size: 10px; }
+
+  /* CTA */
+  .cta-section {
+    background: linear-gradient(135deg, var(--crimson), #8b1a3b);
+    padding: 80px 48px;
+    text-align: center;
+    color: white;
+  }
+  .cta-section h2 { font-size: 40px; margin-bottom: 16px; }
+  .cta-section p { font-size: 17px; opacity: 0.85; margin-bottom: 36px; }
+  .cta-section .btn { padding: 16px 40px; font-size: 16px; background: white; color: var(--crimson); font-weight: 700; }
+
+  /* Partners */
+  .partners { padding: 60px 48px; text-align: center; }
+  .partners p { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 32px; }
+  .partner-logos { display: flex; justify-content: center; align-items: center; gap: 40px; flex-wrap: wrap; }
+  .partner-logo { font-weight: 700; font-size: 18px; color: var(--pale-blush); letter-spacing: -0.5px; }
+</style>
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar">
+  <a href="/" class="navbar-brand">
+    <span class="shield-icon">🛡️</span>
+    <span class="brand-text">Gig<span>Shield</span></span>
+  </a>
+  <div class="nav-links">
+    <a href="#features" class="nav-link">How it Works</a>
+    <a href="#tiers" class="nav-link">Plans</a>
+    <a href="/login" class="nav-link">Login</a>
+    <a href="/register" class="nav-link btn-gold">Get Protected →</a>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-left">
+      <h1>Your Income,<br><span>Protected.</span><br>Always.</h1>
+      <p>India's first AI-powered parametric insurance platform built exclusively for delivery partners. When extreme weather or disruptions stop you from working, GigShield pays you automatically — no claims, no paperwork.</p>
+      <div class="hero-btns">
+        <a href="/register" class="btn btn-gold">Start Free Coverage →</a>
+        <a href="#features" class="btn btn-outline" style="color:white;border-color:rgba(255,255,255,0.3);">How it Works</a>
+      </div>
+      <div class="hero-stat-strip">
+        <div class="stat"><div class="num">₹900</div><div class="lbl">Max Daily Payout</div></div>
+        <div class="stat"><div class="num">24hr</div><div class="lbl">Auto Payment</div></div>
+        <div class="stat"><div class="num">₹49</div><div class="lbl">From / Week</div></div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="shield-visual">
+        <div class="shield-bg"></div>
+        <div class="shield-icon-lg">🛡️</div>
+        <div class="floating-badge">
+          <div class="fb-icon" style="background:#fff3cd">🌧️</div>
+          <div><div style="font-size:11px;color:#888">Heavy Rain Detected</div><div style="color:#155724">Auto-Payout Triggered</div></div>
+        </div>
+        <div class="floating-badge">
+          <div class="fb-icon" style="background:#d4edda">✅</div>
+          <div><div style="font-size:11px;color:#888">Raju K. — Delhi</div><div style="color:#155724">₹500 Paid Today</div></div>
+        </div>
+        <div class="floating-badge">
+          <div class="fb-icon" style="background:#f8d7da">🌡️</div>
+          <div><div style="font-size:11px;color:#888">42°C Alert — Hyderabad</div><div style="color:var(--crimson)">Coverage Active</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Partners -->
+<section class="partners">
+  <p>Trusted by Delivery Partners Working With</p>
+  <div class="partner-logos">
+    <span class="partner-logo" style="color:#e23744">Zomato</span>
+    <span class="partner-logo" style="color:#fc8019">Swiggy</span>
+    <span class="partner-logo" style="color:#232f3e">Amazon</span>
+    <span class="partner-logo" style="color:#2874f0">Flipkart</span>
+    <span class="partner-logo" style="color:#02b290">Zepto</span>
+    <span class="partner-logo" style="color:#f6ca3d">Blinkit</span>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="section-header">
+    <div class="eyebrow">How GigShield Works</div>
+    <h2>Smart Insurance for the Modern Gig Worker</h2>
+    <p>We monitor weather in real-time and pay you automatically when conditions make work impossible — before you even ask.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#fff3cd">🌧️</div>
+      <h3>Real-Time Weather Monitoring</h3>
+      <p>We continuously track weather in your exact delivery zone. Heavy rain, extreme heat, floods, low visibility — all automatically detected.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#d4edda">⚡</div>
+      <h3>Zero-Touch Payouts</h3>
+      <p>No claim forms. No waiting rooms. When a qualifying disruption is detected, your payout is processed automatically by end of day.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#cce5ff">🤖</div>
+      <h3>AI Fraud Protection</h3>
+      <p>Our AI verifies claims against real weather data, delivery logs from your platform, and historical patterns to protect honest workers.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#f8d7da">📍</div>
+      <h3>Pincode-Level Precision</h3>
+      <p>Coverage is triggered based on your exact service area. A rain alert 20km away won't affect your payout eligibility unfairly.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#e2d9f3">💳</div>
+      <h3>Weekly Billing, Daily Records</h3>
+      <p>Pay a small weekly premium aligned to your earnings cycle. Every day is recorded separately so you're never penalised unfairly.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#d1ecf1">🔒</div>
+      <h3>Secure & Transparent</h3>
+      <p>Bank-grade security, 2-factor authentication, and a full audit trail so you always know exactly what's happening with your account.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Tiers -->
+<section class="tiers-section" id="tiers">
+  <div class="section-header">
+    <div class="eyebrow" style="color:var(--warm-brown)">Choose Your Coverage</div>
+    <h2>Plans Built for Every Delivery Partner</h2>
+    <p>From basic protection to maximum coverage. Cancel anytime. No lock-ins.</p>
+  </div>
+  <div class="tiers-grid">
+    {% set tier_icons = {'basic':'🥉','gold':'🥇','platinum':'💎','diamond':'💠','diamond+':'👑'} %}
+    {% for tier_name, tier in tiers.items() %}
+    <div class="tier-card {% if tier_name == 'platinum' %}featured{% endif %}">
+      <div style="font-size:32px;margin-bottom:12px;">{{ tier_icons[tier_name] }}</div>
+      <div class="tier-name">{{ tier_name.replace('+',' Plus').title() }}</div>
+      <div class="tier-price">₹{{ tier.weekly_premium }}<span>/week</span></div>
+      <div class="tier-payout">Up to ₹{{ tier.daily_payout }}/day</div>
+      <div class="tier-features">
+        <div class="tier-feature"><i class="fas fa-check"></i> ₹{{ tier.daily_payout }} full-day payout</div>
+        <div class="tier-feature"><i class="fas fa-check"></i> ₹{{ (tier.daily_payout / 2)|int }} half-day payout</div>
+        <div class="tier-feature"><i class="fas fa-check"></i> Up to {{ tier.max_days }} days/week</div>
+        <div class="tier-feature"><i class="fas fa-check"></i> Auto weather detection</div>
+        <div class="tier-feature"><i class="fas fa-check"></i> Social disruption cover</div>
+      </div>
+      <a href="/register?tier={{ tier_name }}" class="btn {% if tier_name == 'platinum' %}btn-gold{% else %}btn-outline{% endif %} w-full" style="{% if tier_name != 'platinum' %}color:white;border-color:rgba(255,255,255,0.3);justify-content:center;{% else %}justify-content:center;{% endif %}">
+        Get Started
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2>Don't Let the Rain Take Your Pay</h2>
+  <p>Join thousands of delivery partners who ride protected with GigShield.</p>
+  <a href="/register" class="btn">Protect My Income Now →</a>
+</section>
+
+<footer style="background:#2C2422;color:var(--pale-blush);text-align:center;padding:24px;font-size:13px;">
+  © {{ now.year if now else 2026 }} GigShield · AI-Powered Income Protection for India's Gig Workers · 
+  <span style="color:var(--warm-brown);">Income loss coverage only. No health, vehicle, or accident insurance.</span>
+</footer>
+{% endblock %}

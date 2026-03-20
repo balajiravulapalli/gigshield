@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — GigShield{% endblock %}
+{% block content %}
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">Main</div>
+    <a href="/dashboard" class="sidebar-link active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="/dashboard/policies" class="sidebar-link"><i class="fas fa-shield-alt"></i> My Policy</a>
+    <a href="/dashboard/subscribe" class="sidebar-link"><i class="fas fa-plus-circle"></i> Subscribe</a>
+    <div class="sidebar-section">Activity</div>
+    <a href="/dashboard/claims" class="sidebar-link"><i class="fas fa-file-invoice"></i> Claims</a>
+    <a href="/dashboard/payments" class="sidebar-link"><i class="fas fa-receipt"></i> Payments</a>
+    <div class="sidebar-section">Support</div>
+    <a href="/dashboard/report" class="sidebar-link"><i class="fas fa-flag"></i> Report Issue</a>
+    <a href="/dashboard/profile" class="sidebar-link"><i class="fas fa-user-cog"></i> Profile</a>
+    <div style="flex:1"></div>
+    <a href="/logout" class="sidebar-link" style="margin-top:auto;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </aside>
+
+  <main class="main-content">
+    <!-- Disruption banner -->
+    {% if disruption_active and today_weather %}
+    <div class="disruption-banner">
+      <div class="icon">⚠️</div>
+      <div>
+        <h3>Active Disruption — {{ today_weather.disruption_type|replace('_',' ')|title }}</h3>
+        <p>A qualifying disruption has been detected in your area. Your payout will be processed automatically by end of day.</p>
+      </div>
+      {% if active_policy %}
+      <div style="margin-left:auto;background:rgba(255,255,255,0.2);padding:12px 20px;border-radius:8px;text-align:center;">
+        <div style="font-size:22px;font-weight:700;">₹{{ (active_policy.daily_payout if today_weather.severity == 'full' else active_policy.daily_payout // 2) }}</div>
+        <div style="font-size:11px;opacity:0.8;text-transform:uppercase">{{ today_weather.severity }} day payout</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Page header -->
+    <div class="page-header">
+      <h1>Good {{ 'morning' if now.hour < 12 else ('afternoon' if now.hour < 17 else 'evening') }}, {{ current_user.full_name.split()[0] }} 👋</h1>
+      <p>Here's your GigShield coverage summary for today.</p>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="grid-4" style="margin-bottom:24px;">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fff3cd;">💰</div>
+        <div class="stat-value">₹{{ week_payout|int }}</div>
+        <div class="stat-label">This Week's Payouts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#d4edda;">📋</div>
+        <div class="stat-value">{{ week_claims }}</div>
+        <div class="stat-label">Claims This Week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#{% if active_policy %}d4edda{% else %}f8d7da{% endif %};">🛡️</div>
+        <div class="stat-value" style="font-size:18px;{% if not active_policy %}color:var(--crimson){% endif %}">
+          {% if active_policy %}{{ active_policy.tier.replace('+',' Plus').title() }}{% else %}No Policy{% endif %}
+        </div>
+        <div class="stat-label">Current Plan</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#{% if disruption_active %}f8d7da{% else %}e2d9f3{% endif %};">🌤️</div>
+        <div class="stat-value" style="font-size:18px;">
+          {% if today_weather and not today_weather.get('_mock') %}
+            {{ today_weather.weather_data.weather[0].main if today_weather.weather_data.get('weather') else 'Clear' }}
+          {% else %}Checking{% endif %}
+        </div>
+        <div class="stat-label">Today's Weather</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+      <!-- Active policy card -->
+      <div class="card">
+        <div class="card-title">🛡️ Active Coverage</div>
+        {% if active_policy %}
+        <div style="background:linear-gradient(135deg,#504746,#2c2422);border-radius:12px;padding:24px;color:white;margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+            <div>
+              <div style="font-size:12px;color:var(--pale-blush);text-transform:uppercase;letter-spacing:1px;">Plan</div>
+              <div style="font-size:22px;font-weight:700;font-family:'Playfair Display',serif;">{{ active_policy.tier.replace('+',' Plus').title() }}</div>
+            </div>
+            <span class="badge badge-green">● Active</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+            <div><div style="font-size:11px;color:var(--pale-blush);margin-bottom:4px;">Weekly Premium</div><div style="font-weight:700;color:var(--gold);">₹{{ active_policy.weekly_premium|int }}</div></div>
+            <div><div style="font-size:11px;color:var(--pale-blush);margin-bottom:4px;">Daily Payout</div><div style="font-weight:700;color:var(--gold);">₹{{ active_policy.daily_payout|int }}</div></div>
+            <div><div style="font-size:11px;color:var(--pale-blush);margin-bottom:4px;">Max Days/Week</div><div style="font-weight:700;color:var(--gold);">{{ active_policy.max_claimable_days }}</div></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <a href="/dashboard/policies" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i> View Details</a>
+          <a href="/dashboard/claims" class="btn btn-outline btn-sm"><i class="fas fa-history"></i> Claim History</a>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:32px;">
+          <div style="font-size:48px;margin-bottom:12px;">😟</div>
+          <h3 style="margin-bottom:8px;font-size:16px;">No Active Policy</h3>
+          <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">You're not covered. Subscribe to a plan to start protecting your income.</p>
+          <a href="/dashboard/subscribe" class="btn btn-gold"><i class="fas fa-plus"></i> Get Covered Now</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Recent claims -->
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <div class="card-title" style="margin-bottom:0">📋 Recent Claims</div>
+          <a href="/dashboard/claims" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        {% if recent_claims %}
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for claim in recent_claims %}
+            <tr>
+              <td style="font-size:13px;">{{ claim.claim_date.strftime('%d %b') }}</td>
+              <td style="font-size:13px;">{{ claim.disruption_type|replace('_',' ')|title if claim.disruption_type else '—' }}</td>
+              <td style="font-weight:600;color:var(--charcoal);">₹{{ claim.payout_amount|int if claim.payout_amount else '—' }}</td>
+              <td>
+                {% if claim.status == 'paid' %}<span class="badge badge-green">Paid</span>
+                {% elif claim.status == 'approved' %}<span class="badge badge-blue">Approved</span>
+                {% elif claim.status == 'pending' %}<span class="badge badge-yellow">Pending</span>
+                {% elif claim.status == 'rejected' %}<span class="badge badge-red">Rejected</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:32px;color:var(--text-muted);">
+          <div style="font-size:36px;margin-bottom:8px;">🌤️</div>
+          <p>No claims yet. Stay protected!</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Recent payments -->
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <div class="card-title" style="margin-bottom:0">💳 Recent Payments</div>
+          <a href="/dashboard/payments" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        {% if recent_payments %}
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for pay in recent_payments %}
+            <tr>
+              <td style="font-size:13px;">{{ pay.created_at.strftime('%d %b') }}</td>
+              <td style="font-size:13px;">{{ pay.description or pay.payment_type.title() }}</td>
+              <td style="font-weight:600;{% if pay.payment_type == 'payout' %}color:#28a745{% else %}color:var(--charcoal){% endif %}">
+                {% if pay.payment_type == 'payout' %}+{% else %}-{% endif %}₹{{ pay.amount|int }}
+              </td>
+              <td>
+                {% if pay.status == 'completed' %}<span class="badge badge-green">Done</span>
+                {% elif pay.status == 'pending' %}<span class="badge badge-yellow">Pending</span>
+                {% else %}<span class="badge badge-red">Failed</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:32px;color:var(--text-muted);">
+          <i class="fas fa-receipt" style="font-size:32px;margin-bottom:8px;opacity:0.3;display:block;"></i>
+          No payment history yet.
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Weather widget -->
+      <div class="card">
+        <div class="card-title">🌦️ Your Area — {{ current_user.pincode }}</div>
+        {% if today_weather and today_weather.weather_data.get('main') %}
+        {% set wd = today_weather.weather_data %}
+        <div style="text-align:center;padding:16px;">
+          <div style="font-size:56px;margin-bottom:8px;">
+            {% set wid = wd.weather[0].id if wd.weather else 800 %}
+            {% if wid < 300 %}⛈️{% elif wid < 400 %}🌧️{% elif wid < 500 %}🌦️{% elif wid < 600 %}🌧️{% elif wid < 700 %}❄️{% elif wid < 800 %}🌫️{% elif wid == 800 %}☀️{% else %}⛅{% endif %}
+          </div>
+          <div style="font-size:42px;font-weight:700;font-family:'Playfair Display',serif;color:var(--charcoal);">{{ wd.main.temp|round(1) }}°C</div>
+          <div style="color:var(--text-muted);margin-bottom:16px;">{{ wd.weather[0].description|title if wd.weather else 'Clear' }}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:var(--bg);border-radius:8px;padding:10px;">
+              <div style="font-size:11px;color:var(--text-muted);">Humidity</div>
+              <div style="font-weight:600;">{{ wd.main.humidity }}%</div>
+            </div>
+            <div style="background:var(--bg);border-radius:8px;padding:10px;">
+              <div style="font-size:11px;color:var(--text-muted);">Wind</div>
+              <div style="font-weight:600;">{{ (wd.wind.speed * 3.6)|round(1) }} km/h</div>
+            </div>
+          </div>
+          {% if disruption_active %}
+          <div style="background:#fff3cd;border-radius:8px;padding:10px;margin-top:12px;font-size:13px;color:#856404;font-weight:600;">
+            ⚠️ Disruption Active — Payout Processing
+          </div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:32px;color:var(--text-muted);">
+          <i class="fas fa-cloud-sun" style="font-size:32px;margin-bottom:8px;opacity:0.3;display:block;"></i>
+          Weather data loading...
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  const now = new Date();
+</script>
+{% endblock %}

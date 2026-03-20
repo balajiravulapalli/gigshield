@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Report Issue — GigShield{% endblock %}
+{% block extra_css %}
+<style>
+  .report-form { max-width: 680px; }
+  .report-type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 8px; }
+  .report-type-opt input { display: none; }
+  .report-type-label {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; border: 2px solid var(--border);
+    border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 14px;
+  }
+  .report-type-label:hover { border-color: var(--charcoal); }
+  .report-type-opt input:checked + .report-type-label { border-color: var(--charcoal); background: var(--bg); font-weight: 600; }
+  .report-type-label .rt-icon { font-size: 20px; width: 36px; height: 36px; background: var(--bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .llm-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .report-status-timeline { display: flex; flex-direction: column; gap: 0; }
+  .timeline-item { display: flex; gap: 14px; padding-bottom: 20px; position: relative; }
+  .timeline-item::before { content: ''; position: absolute; left: 15px; top: 32px; bottom: 0; width: 2px; background: var(--border); }
+  .timeline-item:last-child::before { display: none; }
+  .timeline-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; }
+  .timeline-content { flex: 1; padding-top: 4px; }
+  .timeline-content h4 { font-size: 14px; font-weight: 600; color: var(--charcoal); margin-bottom: 2px; }
+  .timeline-content p { font-size: 12px; color: var(--text-muted); }
+</style>
+{% endblock %}
+{% block content %}
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">Main</div>
+    <a href="/dashboard" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="/dashboard/policies" class="sidebar-link"><i class="fas fa-shield-alt"></i> My Policy</a>
+    <a href="/dashboard/subscribe" class="sidebar-link"><i class="fas fa-plus-circle"></i> Subscribe</a>
+    <div class="sidebar-section">Activity</div>
+    <a href="/dashboard/claims" class="sidebar-link"><i class="fas fa-file-invoice"></i> Claims</a>
+    <a href="/dashboard/payments" class="sidebar-link"><i class="fas fa-receipt"></i> Payments</a>
+    <div class="sidebar-section">Support</div>
+    <a href="/dashboard/report" class="sidebar-link active"><i class="fas fa-flag"></i> Report Issue</a>
+  </aside>
+  <main class="main-content">
+    <div class="page-header">
+      <h1>Report an Issue</h1>
+      <p>Think a payout was missed or incorrect? Our AI reviews every report within 24 hours.</p>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+      <!-- Report form -->
+      <div class="card report-form">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <div class="card-title" style="margin-bottom:0;">📝 Submit Report</div>
+          <span class="llm-badge">🤖 AI-Reviewed</span>
+        </div>
+
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:20px;font-size:13px;color:#166534;">
+          <strong>How it works:</strong> Submit your report with as much detail as possible. Our AI will cross-check your claim against weather data, platform outage records, and your delivery history. Valid claims are paid within 7 business days.
+        </div>
+
+        <form id="reportForm">
+          <div class="form-group" style="margin-bottom:20px;">
+            <label style="margin-bottom:12px;display:block;">Issue Type *</label>
+            <div class="report-type-grid">
+              <label class="report-type-opt">
+                <input type="radio" name="report_type" value="missed_payout" checked>
+                <div class="report-type-label">
+                  <div class="rt-icon">💰</div>
+                  <div><div style="font-weight:600;">Missed Payout</div><div style="font-size:12px;color:var(--text-muted);">Expected payout didn't arrive</div></div>
+                </div>
+              </label>
+              <label class="report-type-opt">
+                <input type="radio" name="report_type" value="app_crash">
+                <div class="report-type-label">
+                  <div class="rt-icon">📱</div>
+                  <div><div style="font-weight:600;">App Outage</div><div style="font-size:12px;color:var(--text-muted);">Platform was down and I couldn't work</div></div>
+                </div>
+              </label>
+              <label class="report-type-opt">
+                <input type="radio" name="report_type" value="payment_issue">
+                <div class="report-type-label">
+                  <div class="rt-icon">🏦</div>
+                  <div><div style="font-weight:600;">Payment Issue</div><div style="font-size:12px;color:var(--text-muted);">Wrong amount or failed transfer</div></div>
+                </div>
+              </label>
+              <label class="report-type-opt">
+                <input type="radio" name="report_type" value="other">
+                <div class="report-type-label">
+                  <div class="rt-icon">❓</div>
+                  <div><div style="font-weight:600;">Other Issue</div><div style="font-size:12px;color:var(--text-muted);">Something else went wrong</div></div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div class="form-group">
+              <label>Incident Date *</label>
+              <input type="date" name="incident_date" required max="{{ today }}">
+            </div>
+            <div class="form-group">
+              <label>Platform Affected</label>
+              <select name="platform_affected">
+                <option value="">Same as my platform</option>
+                <option value="zomato">Zomato</option>
+                <option value="swiggy">Swiggy</option>
+                <option value="amazon">Amazon</option>
+                <option value="flipkart">Flipkart</option>
+                <option value="zepto">Zepto</option>
+                <option value="blinkit">Blinkit</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:20px;">
+            <label>Detailed Description * <span style="color:var(--text-muted);font-weight:400;">(min. 50 characters)</span></label>
+            <textarea name="description" id="descField" placeholder="Describe exactly what happened. Include the time of day, weather conditions you observed, whether the app was functional, and any other relevant context. The more detail you provide, the faster our AI can verify your claim..." rows="6" required></textarea>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;"><span id="charCount">0</span> characters</div>
+          </div>
+
+          <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;margin-bottom:20px;font-size:12px;color:#92400e;">
+            <strong>⚠️ Reminder:</strong> False reports are treated as fraud and may result in policy cancellation. Our AI cross-checks every report against official weather data and platform outage records. Submitting a false report will negatively affect your account standing.
+          </div>
+
+          <button type="submit" class="btn btn-primary w-full" style="padding:13px;justify-content:center;" id="submitReportBtn">
+            <i class="fas fa-paper-plane"></i> Submit for AI Review
+          </button>
+        </form>
+      </div>
+
+      <!-- Past reports + how it works -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <!-- How AI review works -->
+        <div class="card">
+          <div class="card-title">🤖 AI Review Process</div>
+          <div class="report-status-timeline">
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:#d4edda;color:#28a745;">1</div>
+              <div class="timeline-content">
+                <h4>Report Submitted</h4>
+                <p>Your report is received and queued for AI analysis.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:#cce5ff;color:#004085;">2</div>
+              <div class="timeline-content">
+                <h4>AI Cross-Check</h4>
+                <p>Our LLM verifies against weather logs, delivery records, and Downdetector outage data for your platform.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:#fff3cd;color:#856404;">3</div>
+              <div class="timeline-content">
+                <h4>Human Review (if needed)</h4>
+                <p>Borderline cases are escalated to our team for manual verification.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot" style="background:#d4edda;color:#28a745;">4</div>
+              <div class="timeline-content">
+                <h4>Decision & Payout</h4>
+                <p>If approved, payout is processed within 7 business days.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Past reports -->
+        {% if reports %}
+        <div class="card">
+          <div class="card-title">📋 Your Past Reports</div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+          {% for rep in reports[:5] %}
+          <div style="border:1px solid var(--border);border-radius:10px;padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+              <div style="font-size:13px;font-weight:600;">{{ rep.report_type|replace('_',' ')|title }}</div>
+              {% if rep.status == 'resolved' %}
+                {% if rep.admin_decision == 'approved' %}<span class="badge badge-green">Approved</span>
+                {% else %}<span class="badge badge-red">Rejected</span>{% endif %}
+              {% elif rep.status == 'under_review' %}<span class="badge badge-blue">Under Review</span>
+              {% else %}<span class="badge badge-yellow">Submitted</span>{% endif %}
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);">{{ rep.created_at.strftime('%d %b %Y') }} · Incident: {{ rep.incident_date.strftime('%d %b') if rep.incident_date else '—' }}</div>
+            {% if rep.llm_verdict %}
+            <div style="margin-top:8px;font-size:12px;padding:8px;background:var(--bg);border-radius:6px;">
+              <span class="llm-badge" style="font-size:10px;padding:3px 8px;">🤖 AI</span>
+              <span style="color:var(--text-muted);margin-left:6px;">{{ rep.llm_review[:100] + '...' if rep.llm_review and rep.llm_review|length > 100 else rep.llm_review }}</span>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  const today = new Date().toISOString().split('T')[0];
+  document.querySelector('input[name="incident_date"]').max = today;
+
+  document.getElementById('descField').addEventListener('input', function() {
+    document.getElementById('charCount').textContent = this.value.length;
+  });
+
+  document.getElementById('reportForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitReportBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+    const fd = new FormData(this);
+    const resp = await fetch('/dashboard/report', { method: 'POST', body: fd });
+    const data = await resp.json();
+
+    if (data.success) {
+      showToast(data.message, 'success');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      showToast(data.message || 'Submission failed.', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit for AI Review';
+    }
+  });
+</script>
+{% endblock %}

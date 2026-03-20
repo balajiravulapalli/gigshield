@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Reports — Admin{% endblock %}
+{% block content %}
+<div class="app-layout">
+  <aside class="sidebar">
+    <div style="padding:12px;margin-bottom:8px;"><span style="background:var(--crimson);color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;">Admin Portal</span></div>
+    <a href="/admin" class="sidebar-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="/admin/users" class="sidebar-link"><i class="fas fa-users"></i> Users</a>
+    <a href="/admin/claims" class="sidebar-link"><i class="fas fa-file-invoice"></i> Claims</a>
+    <a href="/admin/reports" class="sidebar-link active"><i class="fas fa-flag"></i> Reports</a>
+    <a href="/admin/payouts" class="sidebar-link"><i class="fas fa-money-bill-wave"></i> Payouts</a>
+    <a href="/admin/fraud" class="sidebar-link"><i class="fas fa-shield-virus"></i> Fraud</a>
+    <a href="/admin/weather-logs" class="sidebar-link"><i class="fas fa-cloud-sun"></i> Weather Logs</a>
+    <div style="flex:1;"></div>
+    <a href="/logout" class="sidebar-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </aside>
+  <main class="main-content">
+    <div class="page-header">
+      <h1>User Reports</h1>
+      <p>Review and resolve user-submitted payment and payout disputes.</p>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>User</th><th>Type</th><th>Incident</th><th>AI Verdict</th><th>AI Confidence</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+          {% for rep in reports.items %}
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted);">#{{ rep.id }}</td>
+            <td>
+              <div style="font-size:13px;font-weight:600;">{{ rep.user.full_name if rep.user else '—' }}</div>
+              <div style="font-size:11px;color:var(--text-muted);">{{ rep.user.platform|title if rep.user and rep.user.platform else '' }}</div>
+            </td>
+            <td style="font-size:13px;">{{ rep.report_type|replace('_',' ')|title }}</td>
+            <td style="font-size:13px;">{{ rep.incident_date.strftime('%d %b %Y') if rep.incident_date else '—' }}</td>
+            <td>
+              {% if rep.llm_verdict == 'valid' %}<span class="badge badge-green">✓ Valid</span>
+              {% elif rep.llm_verdict == 'invalid' %}<span class="badge badge-red">✗ Invalid</span>
+              {% elif rep.llm_verdict == 'needs_review' %}<span class="badge badge-yellow">Review</span>
+              {% else %}<span class="badge badge-grey">Pending AI</span>{% endif %}
+            </td>
+            <td>
+              {% if rep.llm_confidence %}<span style="font-weight:600;">{{ (rep.llm_confidence * 100)|int }}%</span>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if rep.status == 'resolved' %}
+                {% if rep.admin_decision == 'approved' %}<span class="badge badge-green">Approved</span>
+                {% else %}<span class="badge badge-red">Rejected</span>{% endif %}
+              {% elif rep.status == 'under_review' %}<span class="badge badge-blue">AI Review</span>
+              {% else %}<span class="badge badge-yellow">New</span>{% endif %}
+            </td>
+            <td>
+              {% if rep.status != 'resolved' %}
+              <a href="/admin/reports/{{ rep.id }}/review" class="btn btn-sm btn-outline">Review →</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <!-- Pagination -->
+      <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;">
+        {% if reports.has_prev %}<a href="?page={{ reports.prev_num }}" class="btn btn-outline btn-sm">← Prev</a>{% endif %}
+        <span style="padding:8px 14px;font-size:13px;color:var(--text-muted);">Page {{ reports.page }} of {{ reports.pages }}</span>
+        {% if reports.has_next %}<a href="?page={{ reports.next_num }}" class="btn btn-outline btn-sm">Next →</a>{% endif %}
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
