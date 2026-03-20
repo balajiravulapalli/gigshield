@@ -54,12 +54,12 @@ claims are strictly excluded.
 ## Insurance Tiers
 
 | Tier       | Weekly Premium | Daily Payout | Max Days Per Week |
-|------------|---------------|--------------|-------------------|
-| Basic      | Rs. 49        | Rs. 200      | 3                 |
-| Gold       | Rs. 99        | Rs. 350      | 4                 |
-| Platinum   | Rs. 149       | Rs. 500      | 5                 |
-| Diamond    | Rs. 199       | Rs. 700      | 6                 |
-| Diamond+   | Rs. 249       | Rs. 900      | 7                 |
+|------------|----------------|--------------|-------------------|
+| Basic      | Rs. 49         | Rs. 200      | 3                 |
+| Gold       | Rs. 99         | Rs. 350      | 4                 |
+| Platinum   | Rs. 149        | Rs. 500      | 5                 |
+| Diamond    | Rs. 199        | Rs. 700      | 6                 |
+| Diamond+   | Rs. 249        | Rs. 900      | 7                 |
 
 ---
 
@@ -75,41 +75,12 @@ Downdetector and partner API data.
 
 ---
 
-## Project Structure
-```
-gigshield/
-├── app.py                  # Flask application factory
-├── config.py               # All configuration and API key placeholders
-├── models.py               # SQLAlchemy database models
-├── requirements.txt        # Python dependencies
-├── routes/
-│   ├── auth.py             # Registration, login, OTP, 2FA
-│   ├── user.py             # User dashboard, policies, claims
-│   ├── admin.py            # Admin portal
-│   ├── partner.py          # Partner portal for platforms
-│   └── api.py              # Internal API endpoints
-├── utils/
-│   ├── weather.py          # OpenWeatherMap integration
-│   ├── fraud.py            # Fraud detection with HuggingFace model slot
-│   ├── payment.py          # Razorpay integration
-│   └── llm_review.py       # Anthropic LLM claims review
-└── templates/
-    ├── base.html
-    ├── landing.html
-    ├── login.html
-    ├── register.html
-    ├── verify_otp.html
-    ├── user/
-    └── admin/
-```
-
----
-
+ 
 ## Local Setup
 
 1. Clone the repository
 ```
-git clone https://github.com/YOUR_USERNAME/gigshield.git
+git clone https://github.com/balajiravulapalli/gigshield.git
 cd gigshield
 ```
 
@@ -165,8 +136,8 @@ Open http://localhost:5000 in your browser.
 
 ## Team
 
-| Name                       | Role                 | GitHub  |
-|----------------------------|----------------------|--------|
+| Name                       | Role                  | GitHub |
+|----------------------------|-----------------------|--------|
 | Ravulapalli Balaji         | Backend and Database  |        |
 | Munugoti Harshitha Bhavana | Frontend and UI       |        |
 | Konapala Rahul Dhruva      | AI and Integrations   |        |
@@ -184,23 +155,4 @@ The .env file is gitignored. Never commit API keys or passwords to the repositor
 Razorpay test keys are safe to use during development. Switch to live keys
 only before production deployment.
 
-
-```
-
 ---
-
-## Step 3 — Add the .gitignore File
-
-The Python .gitignore GitHub generates is good but add these lines to the bottom of it:
-```
-.env
-*.env
-config_local.py
-instance/
-__pycache__/
-*.pyc
-venv/
-.venv/
-*.sqlite3
-*.db
-.DS_Store
